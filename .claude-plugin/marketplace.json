@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "webflow-migrate-skill",
   "version": "1.0.0",
-  "description": "Migrate a Webflow-hosted site to a self-hosted static site without paying for an export",
+  "description": "Migrate your own Webflow-hosted site to a self-hosted static site",
   "owner": {
     "name": "Steve Smith",
     "email": "stevy@hey.com"

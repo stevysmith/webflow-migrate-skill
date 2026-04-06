@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>OG Image</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1280px;
+    height: 640px;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #ffffff;
+    position: relative;
+  }
+
+  /* Webflow-style blue gradient wash at top */
+  .bg-gradient {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 0% 0%, rgba(20, 110, 245, 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 80% at 100% 100%, rgba(20, 110, 245, 0.05) 0%, transparent 70%);
+  }
+
+  /* Subtle dot grid like Webflow's canvas */
+  .dot-grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(20, 110, 245, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    height: 100%;
+    padding: 64px 80px;
+    gap: 60px;
+  }
+
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #146EF5;
+    border-radius: 100px;
+    padding: 7px 16px 7px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.01em;
+    width: fit-content;
+    margin-bottom: 28px;
+  }
+
+  .badge svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  h1 {
+    font-size: 68px;
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.035em;
+    color: #1a1a1a;
+    margin-bottom: 20px;
+  }
+
+  .description {
+    font-size: 20px;
+    font-weight: 400;
+    color: #6b7280;
+    line-height: 1.5;
+    max-width: 480px;
+  }
+
+  .install-cmd {
+    margin-top: 32px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 14px;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 18px;
+    width: fit-content;
+  }
+
+  .install-cmd .prompt { color: #146EF5; }
+
+  /* Right side: migration diagram */
+  .right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 420px;
+  }
+
+  .migration-visual {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .card {
+    width: 140px;
+    height: 170px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    position: relative;
+  }
+
+  .card.from {
+    background: #146EF5;
+    box-shadow:
+      0 4px 24px rgba(20, 110, 245, 0.25),
+      0 0 0 1px rgba(20, 110, 245, 0.1);
+  }
+
+  .card.from .card-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .card.from .card-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.02em;
+  }
+
+  .card.to {
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  }
+
+  .card.to .card-icon {
+    width: 44px;
+    height: 44px;
+    color: #1a1a1a;
+  }
+
+  .card.to .card-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    letter-spacing: 0.02em;
+  }
+
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .arrow-line {
+    display: flex;
+    align-items: center;
+    color: #d1d5db;
+  }
+
+  .arrow-line svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .arrow-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 36px;
+    right: 80px;
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="dot-grid"></div>
+
+  <div class="content">
+    <div class="left">
+      <div class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 17l6-6-6-6"/>
+          <path d="M12 19h8"/>
+        </svg>
+        Claude Code Skill
+      </div>
+      <h1>Webflow<br/>Migrate</h1>
+      <p class="description">Mirror, clean, and self-host any Webflow site. No paid export needed.</p>
+      <div class="install-cmd"><span class="prompt">$</span> npx skills add stevysmith/webflow-migrate-skill</div>
+    </div>
+
+    <div class="right">
+      <div class="migration-visual">
+        <div class="card from">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.95)">
+            <path d="m24 4.515-7.658 14.97H9.149l3.205-6.204h-.144C9.566 16.713 5.621 18.973 0 19.485v-6.118s3.596-.213 5.71-2.435H0V4.515h6.417v5.278l.144-.001 2.622-5.277h4.854v5.244h.144l2.72-5.244H24Z"/>
+          </svg>
+          <span class="card-label">Webflow</span>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-line">
+            <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="6" y1="20" x2="32" y2="20"/>
+              <polyline points="26 14 32 20 26 26"/>
+            </svg>
+          </div>
+          <span class="arrow-label">Migrate</span>
+        </div>
+
+        <div class="card to">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+          </svg>
+          <span class="card-label">Static HTML</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">by Steve Smith</div>
+</body>
+</html>

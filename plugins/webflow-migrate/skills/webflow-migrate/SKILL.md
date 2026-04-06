@@ -1,11 +1,11 @@
 ---
 name: webflow-migrate
-description: Migrate a Webflow-hosted site to a self-hosted static site. Use when the user wants to export, migrate, or move a site off Webflow without paying for an export, self-host a Webflow site, or transition from Webflow to another hosting provider like Render, Netlify, or Vercel.
+description: Migrate your own Webflow-hosted site to a self-hosted static site. Use when the user wants to migrate, move, or self-host their own Webflow site on Render, Netlify, Vercel, or another hosting provider.
 ---
 
 # Webflow Site Migration
 
-Migrate a live Webflow-hosted site to a self-hostable static site without needing a paid Webflow export. Uses `wget` to mirror the published site, then cleans up assets, URLs, and Webflow artifacts.
+Migrate your own Webflow-hosted site to a self-hostable static site. Uses `wget` to mirror the published site, then cleans up assets, URLs, and Webflow artifacts.
 
 ## When to Use
 

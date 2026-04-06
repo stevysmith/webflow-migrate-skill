@@ -1,6 +1,6 @@
 # Webflow Migrate Skill
 
-Migrate a live Webflow-hosted site to a self-hosted static site without paying for a code export. Uses `wget` to mirror the published site, then cleans up assets, URLs, and Webflow artifacts so it's ready to deploy anywhere.
+Migrate your own Webflow-hosted site to a self-hosted static site. Uses `wget` to mirror the published site, then cleans up assets, URLs, and Webflow artifacts so it's ready to deploy anywhere.
 
 ## Installation
 
