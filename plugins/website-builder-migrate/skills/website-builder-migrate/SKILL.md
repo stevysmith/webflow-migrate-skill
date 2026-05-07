@@ -1,17 +1,31 @@
 ---
-name: webflow-migrate
-description: Migrate your own Webflow-hosted site to a self-hosted static site. Use when the user wants to migrate, move, or self-host their own Webflow site on Render, Netlify, Vercel, or another hosting provider.
+name: website-builder-migrate
+description: Migrate a site built on a website builder (Webflow, Framer, Squarespace, Wix, Carrd, etc.) to a self-hosted static site. Use when the user wants to export, migrate, or move a site off a website-builder platform without paying for an export, self-host the site, or transition to another hosting provider like Render, Netlify, or Vercel.
 ---
 
-# Webflow Site Migration
+# Website Builder Migration
 
-Migrate your own Webflow-hosted site to a self-hostable static site. Uses `wget` to mirror the published site, then cleans up assets, URLs, and Webflow artifacts.
+Migrate a live site built on a website-builder platform (Webflow, Framer, Squarespace, Wix, Carrd, Editor X, Dorik, etc.) to a self-hostable static site without needing a paid export. Uses `wget` to mirror the published site, then cleans up assets, URLs, and platform-specific artifacts.
 
 ## When to Use
 
-- User wants to migrate off Webflow without paying for code export
-- User wants to self-host a Webflow site on Render, Netlify, Vercel, etc.
-- User wants a local copy of a Webflow site they can edit and maintain
+- User wants to migrate off a website builder without paying for code export
+- User wants to self-host a Webflow / Framer / Squarespace / Wix / Carrd site on Render, Netlify, Vercel, etc.
+- User wants a local copy of a builder-hosted site they can edit and maintain
+
+## Platform-Specific Notes
+
+The Phase 1–7 workflow below is written against Webflow (the most common case and what's been battle-tested), but the same shape applies to other website builders. Before starting, identify the platform and substitute its CDN domain and chunk patterns.
+
+| Platform | Asset CDN domain(s) | Notes |
+|---|---|---|
+| **Webflow** | `cdn.prod.website-files.com`, `d3e54v103j8qbb.cloudfront.net` (jQuery) | Multiple site-IDs per site (one for site assets, one for CMS content). Webpack chunks `webflow.achunk.<hash>.js`. Heavy SRI integrity tags — must strip. |
+| **Framer** | `framerusercontent.com`, `framer.com/m/` | React SPA, dynamic imports of route bundles. Some pages may render client-side only — wget captures the SSR shell; verify hydration in the browser. Custom code blocks may reference external scripts. |
+| **Squarespace** | `static1.squarespace.com`, `images.squarespace-cdn.com` | Heavy template JS (`sqs.js`), forms entirely backend-dependent. Many themes use server-side image transforms — capture each `?format=` variant referenced. |
+| **Wix** | `static.parastorage.com`, `static.wixstatic.com` | Hardest to migrate — extremely SPA-driven, much of the page is rendered client-side from dynamic configs. wget mirroring often produces broken output; consider this approach only for static template sites. |
+| **Carrd** | (mostly inlined / single-page) | Generally trivial — single HTML file with inlined CSS, few external assets. The full workflow is overkill; `wget --page-requisites <url>` plus a manual asset pass usually suffices. |
+
+For unfamiliar platforms: open the live site, view source, and note (1) which CDN domain hosts CSS/JS/images, (2) whether `<script>` and `<link>` tags carry `integrity="sha384-..."` SRI attributes, (3) whether the runtime JS contains a webpack-style chunk-id-to-hash map. These three pieces drive Phases 1–3.
 
 ## Prerequisites
 
@@ -25,7 +39,7 @@ Follow these phases in order. Each phase has specific steps — do not skip phas
 
 ### Phase 1: Mirror the Live Site
 
-Use `wget` with CDN spanning to download the full site including assets hosted on Webflow's CDN.
+Use `wget` with CDN spanning to download the full site including assets hosted on the builder's CDN. Substitute `<CDN_DOMAIN>` with the appropriate domain from the Platform-Specific Notes table (e.g. `cdn.prod.website-files.com` for Webflow, `framerusercontent.com` for Framer):
 
 ```bash
 wget --mirror \
@@ -33,22 +47,23 @@ wget --mirror \
   --adjust-extension \
   --page-requisites \
   --span-hosts \
-  --domains=<DOMAIN>,cdn.prod.website-files.com \
+  --domains=<DOMAIN>,<CDN_DOMAIN> \
   --no-parent \
   https://<DOMAIN>/
 ```
 
 **Key flags:**
-- `--span-hosts --domains=...,cdn.prod.website-files.com` — required because Webflow serves assets from a separate CDN domain
+- `--span-hosts --domains=...,<CDN_DOMAIN>` — required because the builder serves assets from a separate CDN domain
 - `--convert-links` — rewrites absolute URLs to relative paths
 - `--page-requisites` — downloads CSS, JS, images, fonts referenced by each page
 - `--adjust-extension` — adds `.html` extensions for clean URLs
 
-**Common issues:**
+**Common issues (all platforms):**
 - Videos with URL-encoded paths (`%2F`, `%20`) may not download automatically. Check for these and download manually with `wget -q "<url>" -O <local-name>`.
-- The CDN's `robots.txt` returns 403 — this is expected and harmless.
+- The CDN's `robots.txt` may return 403 — this is expected and harmless.
 - `--page-requisites` only follows `src` and `href` attributes. **Inline `background-image:url(...)` assets are NOT downloaded** — these must be extracted and fetched separately in Phase 2.
-- Webflow uses **multiple CDN site IDs** — one for site-level assets (CSS, JS, images used in templates) and a separate one for CMS collection content (blog thumbnails, team photos, etc.). Check for multiple directories under `cdn.prod.website-files.com/` after mirroring.
+- **wget does NOT download dynamically-loaded webpack chunks** (e.g. `webflow.achunk.<hash>.js` on Webflow, `chunk-<hash>.js` or route bundles on Framer). The runtime loads these on demand for animations, sliders, route transitions, etc. Without them the page often renders blank. See Phase 2 step 8.
+- Multi-tenant CDNs use **per-site IDs in the URL path** (e.g. Webflow's `cdn.prod.website-files.com/<site-id>/...`). A single site can have multiple IDs (one for site assets, one for CMS content). Check for multiple subdirectories under the CDN domain after mirroring.
 
 ### Phase 2: Consolidate into a Clean Structure
 
@@ -95,6 +110,33 @@ wget -q "https://cdn.prod.website-files.com/<site-id>/<double-encoded-filename>"
 ```
 
 7. Delete the raw wget download directories after consolidation
+
+8. **Download dynamically-loaded webpack chunks** — `wget` only fetches entry bundles. The runtime then loads additional chunks on demand (Webflow: `webflow.achunk.<hash>.js`; Framer/others: similar pattern with different naming). Without these, the page often renders blank because the entry bundle throws on the missing import. Each entry bundle has its own chunk-id-to-hash map.
+
+To find the pattern, search the entry bundles for the chunk-URL builder (look for substrings like `achunk`, `chunk.`, or webpack's standard `r.u=e=>` / `__webpack_require__.u`). Extract the hash map (a JS object literal mapping chunk IDs to hashes), download each chunk from the same CDN path the entry bundle was served from.
+
+**Worked example — Webflow:**
+
+```bash
+cd site/assets/js && python3 -c "
+import re, glob
+hashes = set()
+for f in glob.glob('webflow.*.js'):
+    if 'achunk' in f: continue
+    s = open(f).read()
+    for m in re.finditer(r'achunk\\.[\"\\x27]\\+\\((\\{[^}]{20,5000}?\\})', s):
+        hashes.update(re.findall(r'[\"\\x27]([a-f0-9]{16})[\"\\x27]', m.group(1)))
+for h in sorted(hashes): print(h)
+" > /tmp/chunks.txt
+
+while read h; do
+  wget -q "https://cdn.prod.website-files.com/<SITE_ID>/js/webflow.achunk.$h.js" \
+    -O "webflow.achunk.$h.js"
+done < /tmp/chunks.txt
+find . -name "webflow.achunk.*.js" -size 0   # any failures?
+```
+
+Webpack uses automatic publicPath (derived from the entry script `src`), so chunks just need to live alongside the entry bundles in `assets/js/`.
 
 ### Phase 3: Rewrite Asset URLs
 
@@ -164,15 +206,39 @@ find . -name "*.html" -exec sed -i '' 's/%2520/%20/g; s/%252B/%2B/g; s/%2526/%26
 grep -rc "cdn.prod.website-files.com" *.html subdir/*.html | grep -v ":0$"
 ```
 
-Fix any remaining references — these are typically in `<meta>` OG tags or deeply nested inline styles.
+Fix any remaining references — these are typically in `<meta>` OG tags, `<link rel="preconnect">` hints, or deeply nested inline styles. Preconnect hints to the CDN can simply be removed.
 
-### Phase 4: Fix Known Webflow Export Issues
+**Step 6: Strip SRI `integrity` and `crossorigin` attributes**
 
-These issues occur on virtually every Webflow migration:
+Webflow (and most other website builders that ship hashed asset URLs) emit `<link>` and `<script>` tags with SHA-384 `integrity="..."` SRI hashes. The `--convert-links` flag in Phase 1 rewrites URLs *inside* the CSS files, which changes their byte content — so the original SRI hashes no longer match and **the browser silently blocks the CSS/JS**. Symptom: page renders blank with only raw text visible, console shows "Failed to find a valid digest in the 'integrity' attribute". Strip both attributes from every HTML file (skip if the platform doesn't use SRI; check by grepping for `integrity=` in any HTML file before deciding):
+
+```bash
+sed -i '' -E 's/ integrity="[^"]*"//g; s/ crossorigin="[^"]*"//g' *.html subdir/*.html
+```
+
+**Step 7: Rewrite font and asset paths inside CSS**
+
+Webflow's CSS references fonts as `url(../<font>.ttf)` — assuming CSS at `<site>/css/` and fonts at `<site>/`. After consolidation, CSS lives at `assets/css/` so `..` resolves to `assets/`, but the fonts are in `assets/images/`. Rewrite the relative URLs (skip `data:` URIs):
+
+```bash
+cd assets/css && python3 -c "
+import re, glob
+for f in glob.glob('*.css'):
+    s = open(f).read()
+    new = re.sub(
+        r'url\(\.\./([^/)][^/)]*\.(?:ttf|woff2?|otf|eot|svg|png|jpg|jpeg|gif|avif|webp))\)',
+        r'url(../images/\1)', s)
+    if new != s: open(f,'w').write(new); print('rewrote', f)
+"
+```
+
+### Phase 4: Fix Known Builder Export Issues
+
+These issues occur on virtually every website-builder migration. Most apply across platforms; a few are Webflow-specific (called out below).
 
 #### 4a. Broken Video Sources
 
-Webflow encodes video URLs with `%2F` in the path, which breaks during URL rewriting. The `<source>` tags end up truncated like `src="assets/images/>`.
+Webflow (and some other builders) encode video URLs with `%2F` in the path, which breaks during URL rewriting. The `<source>` tags end up truncated like `src="assets/images/>`.
 
 **Fix:** Find all `<video>` elements and verify their `<source src="...">` attributes point to valid files. Also fix any `background-image:url(...)` poster references.
 
@@ -185,13 +251,13 @@ for m in re.findall(r'<video[^>]*>.*?</video>', html, re.DOTALL):
     print(m)
 ```
 
-#### 4b. Webflow Forms Don't Work
+#### 4b. Forms Don't Work
 
-Webflow forms use `method="get"` with no action URL — they rely on Webflow's backend. They will NOT function on a self-hosted site.
+Builder forms (Webflow, Framer, Squarespace, Wix) all rely on the platform's backend — typically `method="get"` or `method="post"` with no real action URL, or with one that points back to the builder's API. They will NOT function on a self-hosted site.
 
 **Options:**
-- Remove forms entirely (replace with direct CTAs like App Store links)
-- Replace with a form service (Formspree, Netlify Forms, Basin)
+- Remove forms entirely (replace with direct CTAs like email/App Store links)
+- Replace with a form service (Formspree, Netlify Forms, Basin, Web3Forms)
 - Build a custom form handler
 
 #### 4c. Outdated / Template Copy
@@ -215,22 +281,24 @@ for term in ['waitlist', 'beta', 'early access', 'coming soon', 'testflight', 'k
 "
 ```
 
-#### 4d. Webflow Data Attributes
+#### 4d. Platform Metadata Attributes
 
-These attributes serve no purpose without Webflow hosting and can be removed:
-- `data-wf-domain`, `data-wf-page`, `data-wf-site` on `<html>`
-- `data-wf-page-id`, `data-wf-element-id` on forms
-- `<!-- Last Published: ... -->` HTML comments
+These serve no purpose once self-hosted and can optionally be stripped:
+- **Webflow:** `data-wf-domain`, `data-wf-page`, `data-wf-site` on `<html>`; `data-wf-page-id`, `data-wf-element-id` on forms; `<!-- Last Published: ... -->` HTML comments
+- **Framer:** `data-framer-*` attributes on elements; `<meta name="generator" content="Framer ...">`
+- **Squarespace:** `<meta name="generator" content="Squarespace">`; inline analytics tracking pixels pointing back to `squarespace.com`
 
 These are cosmetic — removal is optional but keeps the HTML clean.
 
 #### 4e. Propagate Edits Across All Pages
 
-Webflow sites typically share the same header/footer across pages. If you edit the footer in `index.html` (e.g., removing forms, updating copyright), **you must apply the same edits to every other HTML page** (privacy.html, terms.html, etc.).
+Builder-hosted sites typically share the same header/footer across pages. If you edit the footer in `index.html` (e.g., removing forms, updating copyright), **you must apply the same edits to every other HTML page**.
 
 Also check that footer nav links on subpages point to `index.html#section` rather than `subpage.html#section`.
 
 ### Phase 5: Verify
+
+**The static asset-reference check is necessary but not sufficient** — it can return "0 missing of N references" while the page renders blank because of SRI blocks, missing webpack chunks, or CSS-relative paths. Always do an in-browser check too.
 
 Use `agent-browser` (if available) to visually verify the migrated site:
 
@@ -239,12 +307,28 @@ Use `agent-browser` (if available) to visually verify the migrated site:
 python3 -m http.server 8080 -d ./site &
 
 # Take screenshots and compare with the live site
-agent-browser open http://localhost:8080/
-agent-browser screenshot ./preview.png --full
+agent-browser --session local open http://localhost:8080/
+agent-browser --session local wait --load networkidle
+agent-browser --session local screenshot ./preview.png --full
 
 agent-browser --session live open https://<DOMAIN>/
+agent-browser --session live wait --load networkidle
 agent-browser --session live screenshot ./original.png --full
 ```
+
+**Then check the browser console — this catches what static analysis cannot:**
+
+```bash
+agent-browser --session local errors        # JS errors (chunk-load failures, undefined refs)
+agent-browser --session local console       # 404s, SRI integrity blocks, mixed-content blocks
+# Or get all failed/zero-byte resource URLs in one shot:
+agent-browser --session local eval "performance.getEntriesByType('resource').filter(r=>r.responseStatus>=400).map(r=>r.name)"
+```
+
+If the screenshot shows mostly blank space but the asset check passed, the most likely culprits are:
+1. **SRI integrity blocking CSS/JS** — strip integrity/crossorigin (Phase 3, Step 6)
+2. **Missing webpack chunks** — download `webflow.achunk.*.js` (Phase 2, Step 8)
+3. **CSS `url(../foo.ttf)` paths broken** — rewrite to `url(../images/foo.ttf)` (Phase 3, Step 7)
 
 Also run a comprehensive asset reference check across **all** HTML files, including `background-image:url()` references:
 
@@ -323,11 +407,11 @@ After deploying, update DNS records for the custom domain to point to the new ho
 
 These are lower-priority improvements once the site is live:
 
-- **Self-host external scripts** — jQuery from CloudFront, WebFont loader from Google
-- **Remove unused Webflow JS modules** — the 500KB+ webflow runtime includes Lightbox, Slider, Lottie etc. that many sites don't use
+- **Self-host external scripts** — jQuery from CloudFront, WebFont loader from Google, etc.
+- **Remove unused builder JS modules** — Webflow's runtime is 500KB+ and includes Lightbox, Slider, Lottie etc. that many sites don't use; Framer ships per-route component bundles you can prune for static pages
 - **Optimize images** — convert PNGs to WebP, fix oversized `sizes` attributes on responsive images
 - **Replace Embedly YouTube embeds** — use direct YouTube iframes or click-to-load facades
-- **Add `loading="eager"`** to above-the-fold hero images (Webflow sets all images to `lazy`)
+- **Add `loading="eager"`** to above-the-fold hero images (Webflow and Framer both default to `lazy` on every image)
 
 ## Limitations
 

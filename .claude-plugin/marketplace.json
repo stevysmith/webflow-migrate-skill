@@ -1,22 +1,22 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "webflow-migrate-skill",
-  "version": "1.0.0",
-  "description": "Migrate your own Webflow-hosted site to a self-hosted static site",
+  "name": "website-builder-migrate-skill",
+  "version": "2.0.0",
+  "description": "Migrate a site built on a website builder (Webflow, Framer, Squarespace, Wix, Carrd, etc.) to a self-hosted static site",
   "owner": {
     "name": "Steve Smith",
     "email": "stevy@hey.com"
   },
   "plugins": [
     {
-      "name": "webflow-migrate",
-      "description": "Migrate a Webflow-hosted site to a self-hosted static site. Use when the user wants to export, migrate, or move a site off Webflow without paying for an export, self-host a Webflow site, or transition from Webflow to another hosting provider like Render, Netlify, or Vercel.",
-      "version": "1.0.0",
+      "name": "website-builder-migrate",
+      "description": "Migrate a site built on a website builder (Webflow, Framer, Squarespace, Wix, Carrd, etc.) to a self-hosted static site. Use when the user wants to export, migrate, or move a site off a website-builder platform without paying for an export, self-host the site, or transition to another hosting provider like Render, Netlify, or Vercel.",
+      "version": "2.0.0",
       "author": {
         "name": "Steve Smith",
         "email": "stevy@hey.com"
       },
-      "source": "./plugins/webflow-migrate",
+      "source": "./plugins/website-builder-migrate",
       "category": "productivity"
     }
   ]

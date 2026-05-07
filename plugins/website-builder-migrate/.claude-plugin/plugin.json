@@ -1,0 +1,9 @@
+{
+  "name": "website-builder-migrate",
+  "version": "2.0.0",
+  "description": "Migrate a site built on a website builder (Webflow, Framer, Squarespace, Wix, Carrd, etc.) to a self-hosted static site",
+  "author": {
+    "name": "Steve Smith",
+    "email": "stevy@hey.com"
+  }
+}

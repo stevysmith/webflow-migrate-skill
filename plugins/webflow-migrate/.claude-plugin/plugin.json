@@ -1,9 +1,0 @@
-{
-  "name": "webflow-migrate",
-  "version": "1.0.0",
-  "description": "Migrate your own Webflow-hosted site to a self-hosted static site",
-  "author": {
-    "name": "Steve Smith",
-    "email": "stevy@hey.com"
-  }
-}
