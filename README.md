@@ -7,13 +7,13 @@ Migrate a site built on a website builder (Webflow, Framer, Squarespace, Wix, Ca
 ### Via skills.sh (recommended)
 
 ```bash
-npx skills add stevysmith/webflow-migrate-skill
+npx skills add stevysmith/website-builder-migrate-skill
 ```
 
 ### Via Claude Code plugin commands
 
 ```
-/plugin marketplace add stevysmith/webflow-migrate-skill
+/plugin marketplace add stevysmith/website-builder-migrate-skill
 /plugin install website-builder-migrate@website-builder-migrate-skill
 ```
 
