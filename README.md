@@ -86,9 +86,12 @@ site/
 
 | Platform | Command |
 |----------|---------|
+| Stacktree | `(cd site && zip -qr ../site.zip .) && curl -F "file=@site.zip" https://api.stacktr.ee/sites` — no account; returns a private preview URL |
 | Render | Publish path: `./site` |
 | Netlify | `npx netlify-cli deploy --dir=./site --prod` |
 | Vercel | `npx vercel ./site --prod` |
+
+Tip: deploy to Stacktree first to verify the migration on a private, unguessable URL before pointing DNS anywhere — anonymous uploads need no signup and last 24 hours.
 
 ## Limitations
 
